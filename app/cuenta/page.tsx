@@ -3,8 +3,19 @@
 import { useUser } from "@/lib/useUser";
 import { useEffect, useState } from "react";
 
+// 🔹 Tipo seguro para Vercel + TypeScript
+interface User {
+  id: string;
+  email: string;
+}
+
 export default function Cuenta() {
-  const { user, loading } = useUser();
+  // 🔹 Tipamos el hook para evitar los errores de "never"
+  const { user, loading } = useUser() as {
+    user: User | null;
+    loading: boolean;
+  };
+
   const [passwordMessage, setPasswordMessage] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
 
@@ -41,10 +52,14 @@ export default function Cuenta() {
 
   return (
     <div className="max-w-3xl mx-auto p-6 mt-6">
-      {/* TÍTULO */}
+      {/* ============================
+          TÍTULO
+      ============================ */}
       <h1 className="text-4xl font-bold mb-6 text-gray-900">Mi Cuenta</h1>
 
-      {/* TARJETA DE DATOS */}
+      {/* ============================
+          DATOS DEL USUARIO
+      ============================ */}
       <div className="bg-gray-100 p-5 rounded-xl shadow-sm border mb-8">
         <p className="text-sm text-gray-500 font-semibold uppercase mb-2">
           Datos del Usuario
@@ -57,7 +72,9 @@ export default function Cuenta() {
         </p>
       </div>
 
-      {/* CAMBIAR CONTRASEÑA */}
+      {/* ============================
+          CAMBIAR CONTRASEÑA
+      ============================ */}
       <div className="bg-white p-6 rounded-xl shadow border mb-10">
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Cambiar Contraseña
@@ -86,13 +103,13 @@ export default function Cuenta() {
         </form>
 
         {passwordMessage && (
-          <p className="mt-3 text-blue-600 font-medium">
-            {passwordMessage}
-          </p>
+          <p className="mt-3 text-blue-600 font-medium">{passwordMessage}</p>
         )}
       </div>
 
-      {/* HISTORIAL DE COMPRAS */}
+      {/* ============================
+          HISTORIAL DE COMPRAS
+      ============================ */}
       <div className="bg-white p-6 rounded-xl shadow border">
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Historial de Compras
@@ -103,16 +120,13 @@ export default function Cuenta() {
         ) : (
           <div className="flex flex-col gap-4">
             {orders.map((order) => {
-              // 👇 ÚNICO BLOQUE CAMBIADO
               let items: any[] = [];
 
               const rawItems = (order as any).items;
 
               if (Array.isArray(rawItems)) {
-                // ya viene como array (json/jsonb)
                 items = rawItems;
               } else if (typeof rawItems === "string") {
-                // viene como texto -> intentar parsear
                 try {
                   items = JSON.parse(rawItems);
                 } catch {
@@ -137,13 +151,12 @@ export default function Cuenta() {
                       {items.map((item, idx) => (
                         <li key={idx}>
                           {item.nombre || item.name || "Producto"}{" "}
-                          {item.tamano ? `— ${item.tamano}` : ""}{" "}
-                          — Cantidad: {item.cantidad ?? item.quantity ?? 1}
+                          {item.tamano ? `— ${item.tamano}` : ""} — Cantidad:{" "}
+                          {item.cantidad ?? item.quantity ?? 1}
                         </li>
                       ))}
                     </ul>
                   )}
-
 
                   <p className="text-gray-600 text-sm mt-2">
                     {new Date(order.created_at).toLocaleString()}
@@ -155,7 +168,9 @@ export default function Cuenta() {
         )}
       </div>
 
-      {/* CERRAR SESIÓN */}
+      {/* ============================
+          CERRAR SESIÓN
+      ============================ */}
       <div className="bg-white p-6 rounded-xl shadow border mt-10">
         <h2 className="text-xl font-semibold mb-4 text-gray-900">
           Cerrar sesión
