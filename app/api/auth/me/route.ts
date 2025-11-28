@@ -1,32 +1,46 @@
-import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { supabase } from "@/lib/db";
 import { verifyToken } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
-  try {
-    // Obtener cookie
-    const token = req.cookies.get("session")?.value;
+export async function GET() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session")?.value;
 
-    if (!token) {
-      return NextResponse.json({ user: null }, { status: 401 });
-    }
-
-    // Verificar JWT
-    const decoded = verifyToken(token);
-
-    if (!decoded) {
-      return NextResponse.json({ user: null }, { status: 401 });
-    }
-
-    // Retornar usuario (id y email)
-    return NextResponse.json({
-      user: {
-        id: (decoded as any).id,
-        email: (decoded as any).email,
-      },
-    });
-
-  } catch (error) {
-    console.error("🔥 ERROR /api/auth/me:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  // No hay token → no está logueado
+  if (!token) {
+    return new Response(
+      JSON.stringify({ authenticated: false, user: null }),
+      { status: 200 }
+    );
   }
+
+  // Validar JWT
+  const decoded: any = verifyToken(token);
+
+  if (!decoded || !decoded.id) {
+    return new Response(
+      JSON.stringify({ authenticated: false, user: null }),
+      { status: 200 }
+    );
+  }
+
+  // Buscar usuario
+  const { data: user } = await supabase
+    .from("users")
+    .select("id, email")
+    .eq("id", decoded.id)
+    .single();
+
+  if (!user) {
+    return new Response(
+      JSON.stringify({ authenticated: false, user: null }),
+      { status: 200 }
+    );
+  }
+
+  return new Response(
+    JSON.stringify({ authenticated: true, user }),
+    { status: 200 }
+  );
 }
+
