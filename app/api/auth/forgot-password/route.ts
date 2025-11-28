@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import { generateVerifyToken } from "@/lib/auth";
-import { transporter } from "@/lib/mailer";
+import { supabase } from "@/lib/db";
+import { sendEmail } from "@/lib/mail";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
@@ -14,35 +14,40 @@ export async function POST(req: Request) {
       .single();
 
     if (!user) {
-      return NextResponse.json({ error: "Ese email no está registrado" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No existe un usuario con ese email" },
+        { status: 404 }
+      );
     }
 
-    const token = generateVerifyToken();
+    const token = crypto.randomBytes(32).toString("hex");
 
     await supabase
       .from("users")
-      .update({ verify_token: token })
+      .update({ reset_token: token })
       .eq("id", user.id);
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/reset-password?token=${token}`;
+    const base = process.env.NEXT_PUBLIC_BASE_URL;
 
-    console.log("🔗 RECOVERY LINK:", resetUrl);
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Recuperá tu contraseña",
-      html: `
-        <h1>Recuperar contraseña</h1>
-        <p>Hacé clic para crear una nueva contraseña:</p>
-        <a href="${resetUrl}">Restablecer contraseña</a>
-      `,
-    });
+    await sendEmail(
+      user.email,
+      "Restablecer contraseña",
+      `
+        <h1>Recuperación de contraseña</h1>
+        <p>Hacé clic para restablecer tu contraseña:</p>
+        <a href="${base}/reset-password/${token}">
+          Recuperar contraseña
+        </a>
+      `
+    );
 
     return NextResponse.json({ success: true });
-
-  } catch (e) {
-    console.log(e);
-    return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Error interno" },
+      { status: 500 }
+    );
   }
 }
+
