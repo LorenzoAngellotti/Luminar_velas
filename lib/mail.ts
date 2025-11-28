@@ -1,33 +1,30 @@
-import nodemailer from "nodemailer";
+// /lib/mail.ts
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+import { Resend } from "resend";
 
-export async function sendVerificationEmail(email: string, token: string) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS, // contraseña de app
-    },
-  });
+if (!process.env.RESEND_API_KEY) {
+  throw new Error("Falta RESEND_API_KEY en las variables de entorno");
+}
 
-  const verifyUrl = `${BASE_URL}/api/auth/verify?token=${token}`;
+export const resend = new Resend(process.env.RESEND_API_KEY);
 
-  await transporter.sendMail({
-    from: `Luminar Velas <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: "Confirmá tu cuenta",
-    html: `
-      <h2>Bienvenido/a</h2>
-      <p>Hacé clic para verificar tu cuenta:</p>
-      <a href="${verifyUrl}" 
-         style="padding:10px 15px; background:#2563eb; color:#fff; border-radius:5px; text-decoration:none;">
-         Verificar cuenta
-      </a>
-      <br><br>
-      <p>O copiá este link:</p>
-      <p>${verifyUrl}</p>
-    `,
-  });
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string
+) {
+  try {
+    const res = await resend.emails.send({
+      from: "Luminar Velas <onboarding@resend.dev>",
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email enviado:", res);
+    return res;
+  } catch (error) {
+    console.error("Error al enviar email:", error);
+    return null;
+  }
 }
