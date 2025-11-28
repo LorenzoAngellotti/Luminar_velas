@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabase } from "@/lib/db";
-import { verifySessionSignature } from "@/lib/auth";
+import { verifyToken } from "@/lib/auth";
+
 
 export async function GET() {
   const cookieStore = await cookies();
