@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // /lib/mail.ts
 
 import { Resend } from "resend";
@@ -27,4 +28,18 @@ export async function sendEmail(
     console.error("Error al enviar email:", error);
     return null;
   }
+=======
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+export async function sendEmail(to: string, subject: string, html: string) {
+  await resend.emails.send({
+    from: "Luminar Velas <onboarding@resend.dev>",
+    to,
+    subject,
+    html,
+  });
+>>>>>>> f65a93bb54bf797d7a78f4cba208db4a01027a21
 }
+
