@@ -2,22 +2,34 @@
 
 import { useEffect, useState } from "react";
 
+// Tipo del item del carrito
+interface CartItem {
+  id: string;
+  nombre: string;
+  tamano: string;
+  precio: number;
+  cantidad: number;
+  imagen?: string;
+}
+
 export default function Carrito() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("cart") || "[]");
     setCart(stored);
   }, []);
 
-  function actualizarCantidad(index, cantidad) {
+  // Tipado correcto: index es number, cantidad puede ser string o number
+  function actualizarCantidad(index: number, cantidad: string | number) {
     const updated = [...cart];
     updated[index].cantidad = Math.max(1, Number(cantidad));
     localStorage.setItem("cart", JSON.stringify(updated));
     setCart(updated);
   }
 
-  function eliminarProducto(index) {
+  // Tipado correcto: index es number
+  function eliminarProducto(index: number) {
     const updated = cart.filter((_, i) => i !== index);
     localStorage.setItem("cart", JSON.stringify(updated));
     setCart(updated);
@@ -79,7 +91,6 @@ export default function Carrito() {
         </div>
       ))}
 
-      {/* Total */}
       <div className="bg-gray-100 p-4 rounded text-xl font-bold mb-4">
         Total: ${total}
       </div>
