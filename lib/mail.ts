@@ -1,45 +1,31 @@
-<<<<<<< HEAD
 // /lib/mail.ts
 
 import { Resend } from "resend";
 
-if (!process.env.RESEND_API_KEY) {
-  throw new Error("Falta RESEND_API_KEY en las variables de entorno");
-}
-
-export const resend = new Resend(process.env.RESEND_API_KEY);
-
-export async function sendEmail(
-  to: string,
-  subject: string,
-  html: string
-) {
-  try {
-    const res = await resend.emails.send({
-      from: "Luminar Velas <onboarding@resend.dev>",
-      to,
-      subject,
-      html,
-    });
-
-    console.log("Email enviado:", res);
-    return res;
-  } catch (error) {
-    console.error("Error al enviar email:", error);
-    return null;
-  }
-=======
-import { Resend } from "resend";
-
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function sendEmail(to: string, subject: string, html: string) {
-  await resend.emails.send({
-    from: "Luminar Velas <onboarding@resend.dev>",
-    to,
-    subject,
-    html,
-  });
->>>>>>> f65a93bb54bf797d7a78f4cba208db4a01027a21
+export async function sendPasswordResetEmail(to: string, link: string) {
+  if (!process.env.RESEND_API_KEY) {
+    console.error("RESEND_API_KEY no configurada");
+    return null;
+  }
+
+  try {
+    const result = await resend.emails.send({
+      from: "Luminar Velas <no-reply@luminarvelas.com>",
+      to,
+      subject: "Recuperación de contraseña",
+      html: `
+        <p>Hacé clic en el siguiente enlace para restablecer tu contraseña:</p>
+        <a href="${link}">${link}</a>
+      `,
+    });
+
+    return result;
+  } catch (err) {
+    console.error("Error enviando email:", err);
+    return null;
+  }
 }
+
 
