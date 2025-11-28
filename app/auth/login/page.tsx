@@ -1,0 +1,7 @@
+export default function LoginPage() {
+  return (
+    <main className="p-10">
+      <h1 className="text-3xl font-bold">Iniciar sesión</h1>
+    </main>
+  );
+}
