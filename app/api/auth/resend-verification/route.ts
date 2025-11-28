@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/db";
+import { sendEmail } from "@/lib/mail";
 import { generateVerifyToken } from "@/lib/auth";
-import { transporter } from "@/lib/mailer";
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
 
-    if (!email) {
-      return NextResponse.json({ error: "Falta el email" }, { status: 400 });
-    }
-
-    // 1. Buscar usuario
     const { data: user } = await supabase
       .from("users")
       .select("*")
@@ -19,14 +14,19 @@ export async function POST(req: Request) {
       .single();
 
     if (!user) {
-      return NextResponse.json({ error: "No existe una cuenta con ese email" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No existe un usuario con este email" },
+        { status: 404 }
+      );
     }
 
     if (user.verified) {
-      return NextResponse.json({ error: "La cuenta ya está verificada" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tu cuenta ya está verificada" },
+        { status: 400 }
+      );
     }
 
-    // 2. Generar nuevo token
     const newToken = generateVerifyToken();
 
     await supabase
@@ -34,26 +34,21 @@ export async function POST(req: Request) {
       .update({ verify_token: newToken })
       .eq("id", user.id);
 
-    // 3. Crear link
-    const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/verify?token=${newToken}`;
-
-    console.log("🔗 VERIFICATION LINK:", verifyUrl);
-
-    // 4. Enviar email
-    await transporter.sendMail({
-      from: `"Luminar Velas" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Reenviar verificación",
-      html: `
-        <h1>Confirmá tu cuenta</h1>
-        <p>Hacé clic aquí para verificar tu email:</p>
-        <a href="${verifyUrl}">Verificar cuenta</a>
-      `,
-    });
+    await sendEmail(
+      user.email,
+      "Nuevo código de verificación",
+      `
+        <h1>Nuevo código</h1>
+        <h2>${newToken}</h2>
+      `
+    );
 
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.log(e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json(
+      { error: "Error interno" },
+      { status: 500 }
+    );
   }
 }
